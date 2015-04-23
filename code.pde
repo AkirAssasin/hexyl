@@ -3,6 +3,8 @@
 var myfont = loadFont("fonts/font.ttf");
 
 color pc = color(0);
+int score;
+int highScore;
 int width = window.innerWidth - 30;
 int height = window.innerHeight - 30;
 int px = width/2;
@@ -18,7 +20,8 @@ int cts;
 int cs = 9;
 int ms = 9;
 int fader = 0;
-boolean[] cA;
+int winfader = 0;
+int[] cA;
 boolean help = false;
 
 ArrayList pcles;
@@ -32,7 +35,7 @@ void setup() {
     textFont(myfont,60);
     lA = new int[20];
     gA = new int[19];
-    cA = new boolean[7];
+    cA = new boolean[3];
     pcles = new ArrayList();
     if (width < height) {
         ts = width/10;
@@ -54,39 +57,43 @@ void mouseClicked() {
                 break;
         }
     } else {
-        for(i = 0; i < lA.length - 1; i++) {
-            if (lA[i] == 5 && random(1) > 0.7) {
-                lA[i] = 0;
-            }
-            if (lA[i] >= 1 && lA[i] <= 4) {
-                lA[i] += 1;
-            }
-        }
-        
-        if (lA[cs] == 0) {
-            lA[cs] = 1;
-        }
-        
-        if (power > 0 && cost <= power) {
-            px = ppx;
-            py = ppy;
-        }
-        
-        for(i = 0; i < 5; i++) {
-            int a = round(random(lA.length - 1));
-            if (lA[a] == 0) {
-                lA[a] = 1;
-                if (random(1) > 0.9 && a != cs) {
-                    gA[a] = round(random(1,7));
+        if (mouseY.between(ts/2,ts + ts/2) && score > 50) {
+            restartGame(1);
+        } else {
+            for(i = 0; i < lA.length - 1; i++) {
+                if (lA[i] == 5 && random(1) > 0.7) {
+                    lA[i] = 0;
+                }
+                if (lA[i] >= 1 && lA[i] <= 4) {
+                    lA[i] += 1;
                 }
             }
+            
+            if (lA[cs] == 0) {
+                lA[cs] = 2;
+            }
+            
+            if (power > 0 && cost <= power) {
+                px = ppx;
+                py = ppy;
+            }
+            
+            for(i = 0; i < 5; i++) {
+                int a = round(random(lA.length - 1));
+                if (lA[a] == 0) {
+                    lA[a] = 1;
+                    if (random(1) > 0.9 && a != cs) {
+                        gA[a] = round(random(1,7));
+                    }
+                }
+            }
+        
+            if (cost > 0 && cost <= power) {
+                power -= cost;
+            }
+        
+            if (power < 3) {power += 1;}
         }
-    
-        if (cost > 0 && cost <= power) {
-            power -= cost;
-        }
-    
-        if (power < 3) {power += 1;}
     }
 }
 
@@ -177,14 +184,25 @@ void draw() {
         if (p.a <= 0) {pcles.remove(i);}
     }
     
+    score = ((red(pc)/255 + green(pc)/255 + blue(pc)/255)/3)*100;
+    
     fill(255);
     textAlign(CENTER);
     if (help) {
-        textSize(ts/2);
-        text("Remove the darkness by collecting color crystals!",width/2,ts);
+        if (score > 50) {
+            textSize(width/40);
+            text("Click here to escape the darkness!",width/2,ts);
+        } else {
+            textSize(width/40);
+            text("Collect color crystals to erase darkness.",width/2,ts);
+        }
     } else {
         textSize(ts);
-        text("hexyl",width/2,ts);
+        if (score > 50) {
+            text(">> " + round(score) + "% <<",width/2,ts);
+        } else {
+            text("hexyl " + round(score) + "%",width/2,ts);
+        }
     }
     
     if (px == ppx && py == ppy) {cost = 0;}
@@ -231,7 +249,9 @@ void draw() {
         text("?",width - ts/1.5,height - ts/2.7);
         textSize(ts/4);
         fill(255);
-        text("You have " + power + " energy remaining. This jump will cost " + cost + " energy. Energy regenerates by 1 every turn.",width/2,height - height/10);
+        text("You have " + power + " energy remaining.",width/2,height - height/10 - (ts/4)*2);
+        text("This jump will cost " + cost + " energy.",width/2,height - height/10 - ts/4);
+        text("Energy regenerates by 1 every turn.",width/2,height - height/10);
         if (gA[ms] > 0) {
             text("Quick! Get that crystal before it fades!",width/2,ts + (ts/2));
         } else {
@@ -253,9 +273,14 @@ void draw() {
         text("?",width - ts/1.5,height - ts/2.7);
     }
     
+    
+    
     if (fader >= 2) {fader -= 2;}
+    if (winfader >= 2) {winfader -= 2;}
     fill(255,0,0,fader);
     stroke(0,0);
+    rect(0,0,width,height);
+    fill(255,winfader);
     rect(0,0,width,height);
 }
 
@@ -379,12 +404,12 @@ void hexa(x,y,r,h,i) {
     endShape();
     
     if (px == x && py == y && lA[i] > 2) {
-        restartGame();
+        restartGame(0);
     }
 }
 
-void restartGame() {
-    fader = 255;
+void restartGame(h) {
+    if (h == 0) {fader = 255;} else {winfader = 255;}
     for(i = 0; i < lA.length; i++) {
         lA[i] = 0;
     }
