@@ -2,6 +2,7 @@
 
 var myfont = loadFont("fonts/font.ttf");
 
+color pc = color(0);
 int width = window.innerWidth - 30;
 int height = window.innerHeight - 30;
 int px = width/2;
@@ -15,8 +16,10 @@ int cost;
 int ts;
 int cts;
 int cs = 9;
+int ms = 9;
 int fader = 0;
 boolean[] cA;
+boolean help = false;
 
 ArrayList pcles;
 
@@ -41,40 +44,50 @@ void setup() {
 }  
 
 void mouseClicked() {
-    for(i = 0; i < lA.length - 3; i++) {
-        if (lA[i] == 5 && random(1) > 0.7) {
-            lA[i] = 0;
+    if (dist(mouseX,mouseY,width - ts/1.5,height - ts/1.5) <= ts/2) {
+        switch(help) {
+            case true:
+                help = false;
+                break;
+            case false:
+                help = true;
+                break;
         }
-        if (lA[i] >= 1 && lA[i] <= 4) {
-            lA[i] += 1;
-        }
-    }
-    
-    for(i = 0; i < 5; i++) {
-        int a = round(random(lA.length - 2));
-        if (lA[a] == 0) {
-            lA[a] = 1;
-        } else {
-            if (random(1) > 0.9) {
-                gA[a] = round(random(1,7));
+    } else {
+        for(i = 0; i < lA.length - 1; i++) {
+            if (lA[i] == 5 && random(1) > 0.7) {
+                lA[i] = 0;
+            }
+            if (lA[i] >= 1 && lA[i] <= 4) {
+                lA[i] += 1;
             }
         }
-    }
+        
+        if (lA[cs] == 0) {
+            lA[cs] = 1;
+        }
+        
+        if (power > 0 && cost <= power) {
+            px = ppx;
+            py = ppy;
+        }
+        
+        for(i = 0; i < 5; i++) {
+            int a = round(random(lA.length - 1));
+            if (lA[a] == 0) {
+                lA[a] = 1;
+                if (random(1) > 0.9 && a != cs) {
+                    gA[a] = round(random(1,7));
+                }
+            }
+        }
     
-    if (lA[cs] == 0) {
-        lA[cs] = 1;
-    }
+        if (cost > 0 && cost <= power) {
+            power -= cost;
+        }
     
-    if (power > 0 && cost <= power) {
-        px = ppx;
-        py = ppy;
+        if (power < 3) {power += 1;}
     }
-
-    if (cost > 0 && cost <= power) {
-        power -= cost;
-    }
-
-    if (power < 3) {power += 1;}
 }
 
 void draw() {
@@ -150,12 +163,13 @@ void draw() {
       hexa(width/2,height/2 + ((width/30)/4)*12 + width/50,width/30,width/100,18);
       
     
-    hexa(px,py - width/180,width/100,width/90,19);
-    // PLayer piece ^
     
-    stroke(0,255,0,100);
+    
+    stroke(red(pc),green(pc),blue(pc),100);
     strokeWeight(width/200);
     line(px,py,ppx,ppy);
+    hexa(px,py - width/180,width/100,width/90,19);
+    // PLayer piece ^
     
     for (int i=pcles.size()-1; i>=0; i--) {
         Particle p = (Pcle) pcles.get(i);
@@ -165,8 +179,13 @@ void draw() {
     
     fill(255);
     textAlign(CENTER);
-    textSize(ts);
-    text("hexyl",width/2,ts);
+    if (help) {
+        textSize(ts/2);
+        text("Remove the darkness by collecting color crystals!",width/2,ts);
+    } else {
+        textSize(ts);
+        text("hexyl",width/2,ts);
+    }
     
     if (px == ppx && py == ppy) {cost = 0;}
     if (dist(px,py,ppx,ppy) < 150*(ts/cts) && dist(px,py,ppx,ppy) > 1) {cost = 1;}
@@ -203,6 +222,37 @@ void draw() {
         ellipse(width/2 + height/15,height - height/20,height/20,height/20);
     }
     
+    if (help) {
+        fill(255);
+        stroke(255);
+        ellipse(width - ts/1.5,height - ts/1.5, ts, ts);
+        fill(0);
+        textSize(ts);
+        text("?",width - ts/1.5,height - ts/2.7);
+        textSize(ts/4);
+        fill(255);
+        text("You have " + power + " energy remaining. This jump will cost " + cost + " energy. Energy regenerates by 1 every turn.",width/2,height - height/10);
+        if (gA[ms] > 0) {
+            text("Quick! Get that crystal before it fades!",width/2,ts + (ts/2));
+        } else {
+            switch(lA[cs]) {
+                case 1:
+                    fill(255,255,0);
+                    text("Careful! The floor under you is decaying!",width/2,ts + (ts/2));
+                    break;
+                case 2:
+                    fill(255,0,0);
+                    text("Careful! The floor under you will disappear next turn!",width/2,ts + (ts/2));
+                    break;
+            }
+        }
+    }
+    if (!help) {
+        fill(255);
+        textSize(ts);
+        text("?",width - ts/1.5,height - ts/2.7);
+    }
+    
     if (fader >= 2) {fader -= 2;}
     fill(255,0,0,fader);
     stroke(0,0);
@@ -213,10 +263,34 @@ void hexa(x,y,r,h,i) {
     if (dist(mouseX,mouseY,x,y) < (r/4)*3 && lA[i] < 3 && i < 19) {
         ppx = x;
         ppy = y;
+        ms = i;
     }
     if (px == x && py == y) {
         cs = i;
         if (gA[i] > 0) {
+            switch(gA[i]) {
+                case 1:
+                    pc = color((red(pc) + 255)/2,(green(pc) + 0)/2,(blue(pc) + 0)/2);
+                    break;
+                case 2:
+                    pc = color((red(pc) + 255)/2,(green(pc) + 127)/2,(blue(pc) + 0)/2);
+                    break;
+                case 3:
+                    pc = color((red(pc) + 255)/2,(green(pc) + 255)/2,(blue(pc) + 0)/2);
+                    break;
+                case 4:
+                    pc = color((red(pc) + 0)/2,(green(pc) + 255)/2,(blue(pc) + 0)/2);
+                    break;
+                case 5:
+                    pc = color((red(pc) + 0)/2,(green(pc) + 0)/2,(blue(pc) + 255)/2);
+                    break;
+                case 6:
+                    pc = color((red(pc) + 75)/2,(green(pc) + 0)/2,(blue(pc) + 130)/2);
+                    break;
+                case 7:
+                    pc = color((red(pc) + 143)/2,(green(pc) + 0)/2,(blue(pc) + 255)/2);
+                    break;
+            }        
             cA[gA[i] - 1] = true;
             gA[i] = 0;
         }
@@ -243,8 +317,8 @@ void hexa(x,y,r,h,i) {
             break;
     }
     if (i >= 19) {
-        fill(0,150,0);
-        stroke(0,150,0);
+        fill(pc);
+        stroke(pc);
     }
     
     beginShape();
@@ -279,11 +353,16 @@ void hexa(x,y,r,h,i) {
             break;
     }
     if (i >= 19) {
-        fill(0,255,0);
-        stroke(0,255,0);
+        if ((red(pc) + 50) <= 255 && (green(pc) + 50) <= 255 && (blue(pc) + 50) <= 255) {
+            fill(pc + color(50));
+            stroke(pc + color(50));
+        } else {
+            fill(pc);
+            stroke(pc);
+        }
     }
     if (ppx == x && ppy == y) {
-        stroke(0,255,0);
+        stroke(pc);
     }
     if (i <= 18 && gA[i] > 0) {
         pcles.add(new Pcle(x,y,gA[i]));
@@ -313,6 +392,7 @@ void restartGame() {
         gA[i] = 0;
     }
     cs = 9;
+    pc = color(0);
     power = 3;
     ppx = width/2;
     ppy = height/2;
